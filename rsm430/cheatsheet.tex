@@ -1,0 +1,121 @@
+\documentclass[10pt,landscape]{article}
+\usepackage{multicol}
+\usepackage{calc}
+\usepackage{ifthen}
+\usepackage[landscape]{geometry}
+\usepackage{amsmath,amsthm,amsfonts,amssymb}
+\usepackage{color,graphicx,overpic}
+\usepackage{hyperref}
+
+
+\pdfinfo{
+  /Title (example.pdf)
+  /Creator (TeX)
+  /Producer (pdfTeX 1.40.0)
+  /Author (Seamus)
+  /Subject (Example)
+  /Keywords (pdflatex, latex,pdftex,tex)}
+
+% This sets page margins to .5 inch if using letter paper, and to 1cm
+% if using A4 paper. (This probably isn't strictly necessary.)
+% If using another size paper, use default 1cm margins.
+\ifthenelse{\lengthtest { \paperwidth = 11in}}
+    { \geometry{top=.5in,left=.5in,right=.5in,bottom=.5in} }
+    {\ifthenelse{ \lengthtest{ \paperwidth = 297mm}}
+        {\geometry{top=1cm,left=1cm,right=1cm,bottom=1cm} }
+        {\geometry{top=1cm,left=1cm,right=1cm,bottom=1cm} }
+    }
+
+% Turn off header and footer
+\pagestyle{empty}
+
+% Redefine section commands to use less space
+\makeatletter
+\renewcommand{\section}{\@startsection{section}{1}{0mm}%
+                                {-1ex plus -.5ex minus -.2ex}%
+                                {0.5ex plus .2ex}%x
+                                {\normalfont\large\bfseries}}
+\renewcommand{\subsection}{\@startsection{subsection}{2}{0mm}%
+                                {-1explus -.5ex minus -.2ex}%
+                                {0.5ex plus .2ex}%
+                                {\normalfont\normalsize\bfseries}}
+\renewcommand{\subsubsection}{\@startsection{subsubsection}{3}{0mm}%
+                                {-1ex plus -.5ex minus -.2ex}%
+                                {1ex plus .2ex}%
+                                {\normalfont\small\bfseries}}
+\makeatother
+
+% Define BibTeX command
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+% Don't print section numbers
+\setcounter{secnumdepth}{0}
+
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt plus 0.5ex}
+
+%My Environments
+\newtheorem{example}[section]{Example}
+% -----------------------------------------------------------------------
+
+\begin{document}
+\raggedright
+\footnotesize
+\begin{multicols}{3}
+
+
+% multicol parameters
+% These lengths are set only within the two main columns
+%\setlength{\columnseprule}{0.25pt}
+\setlength{\premulticols}{1pt}
+\setlength{\postmulticols}{1pt}
+\setlength{\multicolsep}{1pt}
+\setlength{\columnsep}{2pt}
+
+{\bf FRA cash settlement} = $principal \times \frac{(r-f)(T/360)}{1+(r \cdot T/360)}$ $r$: market rate, $f$: FRA rate, $T$ loan period in days, if $r>f$ bank pays borrower, else borrower pays bank.\\
+{\bf Day count conventions} Canada: GoC - Actual/Actual, Corporates - Actual/365. US: Treasury - Actual/Actual, Agency, Municipals \& Corporates - 30/360.\\
+{\bf Bond Equivalent Yield} Effective annual interest rate: $r_{eff} = (1+\frac{r_s}{m})^m - 1$, $r_s$: quoted interest rate, $m$: \# of compounding period. With different payout frequency: $r_{per\ period} = (1+\frac{r_s}{m})^{m/f}-1$, $f$ payment frequency.\\
+{\bf GoC RRB} $Infla.\ Compens. = Principal\frac{{Ref\ CPI}_{Date}}{{Ref\ CPI}_{Base}} - Principal$, $Coupon = \frac{Real\ Coupon}{2} (Principal + Infla.\ Compens.)$, $Final\ Payment = Principal\frac{{Ref\ CPI}_{Maturity}}{{Ref\ CPI}_{Base}}$ $BEI = GoC\ Nominal\ Yield - RRB\ Yield$\\
+{\bf Gov \& Inflation}: 1) overnight rate $\uparrow$ $\rightarrow$ decrease inflation $\rightarrow$ short-term $\uparrow$, long-term $\downarrow$. 2) overnight rate $\downarrow$ $\rightarrow$ increase activities $\rightarrow$ short-term $\downarrow$, long-term $\uparrow$.\\
+{\bf Annuity} $PV_{annuity} = C \cdot \frac{1-(1+r)^{-n}}{r}$\\
+
+\subsection{Interest Rate Risk}
+Degree of interest rate risk depends on 1) term to maturity, 2) coupon rate, higher means more risk, and 3) YTM, with higher yields the deferred payments are not worth as much.\\
+{\bf Dollar Value of a Basis Point} DVO1 or PVBP = initial price - price if yield is changed by 1 bps\\
+{\bf Two interpretations of duration}: 1) the average time taken by the security, on a discounted basis, to payback the original investment. 2) price elasticity - the percentage change in bond price for a percentage change in interest rate.\\
+{\bf Macaulay Duration}: $\frac{\sum_{t=1}^{n} \frac{C \cdot t}{(1+y/k)^t} + \frac{n \cdot Principal}{(1+y/k)^n}}{Price}$, result must divide by $k=2$ if using semi-annual term. Alternatively (price elasticity): $-\frac{dP/P}{dy/(1+y/k)} = \frac{DVO1}{P}(1+y/k)$\\
+Bond portfolio immunization: fund liabilities with assets in such a way that their Macaulay durations are the same, immune from interest rate fluctuations.\\
+{\bf Modified Duration} $- \frac{dP}{dy}\frac{1}{P} = \frac {Macaulay \ Duration}{1+y/k}$, measures the expected percentage change in the price of a bond given a 100 bps change in yield.\\
+{\bf Callable Bonds} exhibit negative convexity at certain price-yield combination. When interest rate declined below the callable bond's coupon rate, the price won't rise as much as a plain vanilla bond because there is higher risk the issuer will call the bond. Otherwise it is just like an option-free bond.\\
+{\bf Yield Curve Steepener}: pays off if the curve steepens, buy short terms sell long terms. {\bf Yield Curve Flattener}: pays off if the curve flattens, sell short terms buy long terms.\\
+{\bf Risk-weighted portfolio} Set up the trade such that the PVBP is zero: the price change of both bonds will be the same if yields at both point rise or fall by an equal amount (parallel shift): $PVO1 = Modified \ Duration \times 1\ bps\ change\ in\ yield$, ${DVO1}_{bond 1} = {PVO1}_{bond 1} \times {Face\ Value}_{bond 1}$, ${DVO1}_{bond 1} = {DVO1}_{bond 2}$\\
+{\bf Convexity} $\frac{d^2P}{dy^2} = \sum_{t=1}^{n} {\frac {t (t+1) C}{{(1+y)}^{t+2}}} + \frac{n(n+1)M}{(1+y)^{n+2}}$, must divide the result by $k^2$ where $k$ is the number of period per year to adjust it to annual. The percentage price change due to convexity: $\frac{dP}{P} = \frac{1}{2}(convexity)(dy)^2$ A bond with greater convexity is less affected by interest rate change. Investors will have to pay more money (accept a lower YTM) for a bond with greater convexity.\\
+{\bf Duration (Short cut)}: $\frac{{P}_{1} - {P}_{2}}{2({P}_{0})(\Delta y)}$, ${P}_{1}$ = price if yield decline by $\Delta y$, ${P}_{1}$ = price if yields increase by $\Delta y$, ${P}_{0}$ = initial price.\\
+{\bf Convexity (Short cut)}: $\frac{{P}_{1} + {P}_{2} - 2{P}_{0}}{2({P}_{0})(\Delta y)^2}$ 
+
+\subsection{Corprate Bonds}
+{\bf Bullet bond}: pay principal at maturity, highest credit and refinancing risk. {\bf Sinking fund}: issuer sets aside money over time to retire its debt by depositing money into an account or purchasing the bonds in the open market. e.g. project finance ("revenue bonds"), reduce refinancing risk. {\bf Amortizing bonds}: repays part of the principal along with the coupons in equal instalments (e.g. mortgage). The average time to receipt of principal payment is measured by {\bf weighted average life (WAL)}: $\sum_{t=1}^{n} \frac{t \times principal\ received\ at\ month\ t}{12 \times total\ principal}$\\
+{\bf Corporate bond credit ratings} drive 1) Price - determining credit spread, cost of funds, 2) Covenants - higher credit rating, less onerous the covenants, 3) Investor universe - institutional vs. retail, investment grade vs. high yield, 4) Issue size - higher rating, larger buyer universe, larger issue size. The {\bf credit rating agencies} provide info on financial health of borrowers and their debt instrument, assessing the company's ability and willingness to make timely payments on outstanding obligations. {\bf Rating categories}: Investment grade, Non-investment grade (junk): below Baa3, BBB- or BBB(low). Cash flow adequacy is the most critical aspect of rating decision. {\bf EBITDA} is most often used as a proxy for free cash flow. {\bf Financial ratios} are calculated on a fiscal (full) year basis, using {\bf LTM}: LTM Revenue = Previous full year results + Results to current quarter - Result to previous same quarter. {\bf Total Debt} = Short-term debt + Long-term debt.
+{\bf Bond Covenants} deal with the restrictions on the issuers' activities. The covenants can be found in the prospectus or in {\bf Trust Indenture}. Basic covenants include: {\bf Negative Pledges}: limit debt and maximize recovery, {\bf Cross Default}: puts the borrower in default on the current bond issue if it defaults on the payment of principal of another obligation, {\bf Cross Acceleration}: default all outstanding when default the current, {\bf New Issue Test}, {\bf Poison put}: restrictions on merger activities, restrictions on dividend payment and disposition of assets, ranking, and use of proceeds. {\bf Prospectus} is a detailed disclosure document that must be prepared whenever a company plans to issue securities to the public. {\bf Role of the Dealers} includes Debt Origination (debt issuance strategy, timing and execution) and Debt Syndication (price new issues) and secondary market support (trade/make a market). {\bf Distribution alternatives} include marketed underwritten (assured funding, most expensive) and agented transaction (lowest cost, no assurance). {\bf Bought deal}: a type of underwritten transaction where the dealer syndicate buys the entire issue into inventory on a pro rata basis and sells to investors with out any prior marketing or price discovery for the bond issue.
+
+\subsection{Asset Backed Securities}
+{\bf ABS} are bonds backed by income producing assets. {\bf Securitization} is the process of pooling assets into packages of securities. Steps: 1) transfer assets from the seller to a {\bf special purpose vehicle (SPV)}, 2) SPV issues debt to fund the purchase of the assets. SPV is {\bf bankruptcy remote}: the transfer of the assets from the seller to the SPV must constitute a {\bf true sale} - no longer considered property of the seller, cannot access the cash flows on the underlying assets once sold to the SPV. The SPV, or {\bf the Trust} is the issuer of the securities into the capital markets. Under IFRS, the ASB and receivables will now be reported on the balance sheets of the companies themselves, as the originators of the ABS. Consequence: assets remain on the balance sheet as the seller still retains the risk, the sale to SPV is still considered true sale. {\bf Credit enhancement}: allows ABS and ABCP to obtain AAA for the senior tranche. Default loss rate = default rate $\times$ (1 - recovery rate). Methods: 1) overcollateralization, 2) excess spread (first line of defense), 3) reserve accounts, 4) subordination (only in term ABS) - issuing more than one class of securities. {\bf Cash flow waterfall}: senior (AAA), ..., BBB, remaining cash flow is the excess spread.
+
+\subsection{Collateralized Debt Obligations}
+CDO describes a securitization of bonds and loans, has a SPV buys a portfolio and funds itself by issuing Asset Backed Notes. Debt (bonds) are the collateral assets. CDO has a {\bf collateral manager} (servicer) managing the portfolio of debt obligations. Cash flows from collateral pays senior $\rightarrow$ mezzanine $\rightarrow$ swap counter party $\rightarrow$ manage fee $\rightarrow$ equity. Credit rated for all tranches except equity.
+
+\subsection{Residential Mortgages}
+{\bf Canada Mortgage Bonds Program} is to ensure competition in the residential mortgage market and ensure an adequate supply of low-cost mortgage funding to financial institutions. {\bf CMBs} are issued by {\bf Canada Housing Trust (CHT)}, a special purpose trust created. CHT sells CMBs to investors, uses the proceeds to purchase prime mortgages from "approved" lenders. These lenders then taken the proceeds to lend out as mortgage. CMB pays interest and principals guarantee by the GoC, AAA rated.
+
+\subsection{Covered Bonds}
+CB investors receive more favourable treatment than the banks' other creditors at default. Additional recourse to a portfolio of mortgages that are transferred to a SPV provides a secured guarantee at default (used to repay the CBs). CBs are issued by the bank (not the SPV), remain the bank's obligations. CB investors have recourse to both the bank and to the mortgages in the SPV.
+
+% You can even have references
+%\rule{0.3\linewidth}{0.25pt}
+\scriptsize
+\bibliographystyle{abstract}
+\bibliography{refFile}
+\end{multicols}
+\end{document}
