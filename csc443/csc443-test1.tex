@@ -1,0 +1,129 @@
+\documentclass[12pt,landscape]{article}
+\usepackage{multicol}
+\usepackage{calc}
+\usepackage{ifthen}
+\usepackage[landscape]{geometry}
+\usepackage{amsmath,amsthm,amsfonts,amssymb}
+\usepackage{color,graphicx,overpic}
+\usepackage{hyperref}
+
+
+\pdfinfo{
+  /Title (example.pdf)
+  /Creator (TeX)
+  /Producer (pdfTeX 1.40.0)
+  /Author (Seamus)
+  /Subject (Example)
+  /Keywords (pdflatex, latex,pdftex,tex)}
+
+% This sets page margins to .5 inch if using letter paper, and to 1cm
+% if using A4 paper. (This probably isn't strictly necessary.)
+% If using another size paper, use default 1cm margins.
+\ifthenelse{\lengthtest { \paperwidth = 11in}}
+    { \geometry{top=.5in,left=.5in,right=.5in,bottom=.5in} }
+    {\ifthenelse{ \lengthtest{ \paperwidth = 297mm}}
+        {\geometry{top=1cm,left=1cm,right=1cm,bottom=1cm} }
+        {\geometry{top=1cm,left=1cm,right=1cm,bottom=1cm} }
+    }
+
+% Turn off header and footer
+\pagestyle{empty}
+
+% Redefine section commands to use less space
+\makeatletter
+\renewcommand{\section}{\@startsection{section}{1}{0mm}%
+                                {-1ex plus -.5ex minus -.2ex}%
+                                {0.5ex plus .2ex}%x
+                                {\normalfont\large\bfseries}}
+\renewcommand{\subsection}{\@startsection{subsection}{2}{0mm}%
+                                {-1explus -.5ex minus -.2ex}%
+                                {0.5ex plus .2ex}%
+                                {\normalfont\normalsize\bfseries}}
+\renewcommand{\subsubsection}{\@startsection{subsubsection}{3}{0mm}%
+                                {-1ex plus -.5ex minus -.2ex}%
+                                {1ex plus .2ex}%
+                                {\normalfont\small\bfseries}}
+\makeatother
+
+% Define BibTeX command
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+% Don't print section numbers
+\setcounter{secnumdepth}{0}
+
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt plus 0.5ex}
+
+%My Environments
+\newtheorem{example}[section]{Example}
+% -----------------------------------------------------------------------
+
+\begin{document}
+\raggedright
+\footnotesize
+\begin{multicols}{3}
+
+
+% multicol parameters
+% These lengths are set only within the two main columns
+%\setlength{\columnseprule}{0.25pt}
+\setlength{\premulticols}{1pt}
+\setlength{\postmulticols}{1pt}
+\setlength{\multicolsep}{1pt}
+\setlength{\columnsep}{2pt}
+
+\subsection{File Organization}
+Heapfile: scan BD, equality search 0.5BD, range search BD, insert 2D, delete search+D\\
+Sorted: scan BD, equality search $D\log{B}$, range search $D\log{B} + \#matches$, insert search+BD, delete search+BD\\
+Hashed: scan 1.25BD, equality search D, range search 1.25BD, insert 2D, delete search+D\\
+B data pages, average time to read or write a disk page is D \\
+
+\subsection{Indexing}
+If selection queries are frequent, sorting the file or building an index is important. {\bf Hash-based indexes} only good for equality search. {\bf Sorted files} and {\bf tree-based indexes} best for range search; also good for equality search. (Files rarely kept sorted in practice; B+ tree index is better.) Index is a collection of data entries plus a way to quickly find entries with given key values. Data entries can be actual data records, $<key, rid>$ pairs, or $<key, rid-list>$ pairs. Choice orthogonal to indexing technique used to locate data entries with a given key value. Can have several indexes on a given file of data records, each with a different search key. Indexes can be classified as clustered vs. unclustered, primary vs. secondary, and dense vs. sparse. Differences have importantconsequences for utility/performance. Order of fields in composite index key can be important. Index maintenance overhead on updates to key fields. Clustering is an important decision; only one index on a ?given relation can be clustered! 
+
+\subsection{Hash-based Indexing}
+Hash-based indexes: best for equality searches, cannot support range searches. {\bf Static Hashing} can lead to long overflow chains. {\bf Extendible Hashing} avoids overflow pages by splitting a full bucket when a new data entry is to be added to it. Directory to keep track of buckets, doubles periodically. Can get large with skewed data; additional I/O if this does not fit in main memory. {\bf Linear Hashing} avoids directory by splitting buckets round-robin, and using overflow pages. Overflow pages not likely to be long. Space utilization could be lower than Extendible Hashing, since splits not concentrated on dense data areas. Can tune criterion for triggering splits to trade-off slightly longer chains for better space utilization. For hash-based indexes, a skewed data distribution is one in which the hash values of data entries are not uniformly distributed!
+
+\subsection{Join Algorithms}
+$R$: outer relation, $S$: inner relation, $M$: number of pages in outer relation, $N$: number of pages in inner relation, ${P}_{R}$: number of tuples per pages in outer relation, ${P}_{S}$: number of tuples per pages in inner relation \\
+{\bf Simple Nested Loop Join} Naive way: $M + {P}_{R}*M*N$. Page-oriented, for each page of $R$, get each page of $S$, and write out matching pairs of tuples $<r, s>$, where $r$ is in $R$'s page and $s$ is in $S$'s page. $M + M*N$ \\
+{\bf Index Nested Loop Join} If there is an index on the join column of one relation (say $S$), can make it the inner and exploit the index. Cost: $M + M*P_{R}*(cost\ of\ finding\ matching\ S\ tuples)$. For each $R$ tuple, cost of probing $S$ index is about 1.2 for hash index, 2-4 for B+ tree. Cost of then finding $S$ tuples (assuming Alt. (2) or (3) for data entries) depends on clustering. Clustered index: 1 I/O (typical), unclustered: up to 1 I/O per matching $S$ tuple. \\
+{\bf Block Nested Loops Join} Use one in-memory page as an input buffer for scanning the inner $S$, one page as the output buffer, and use all remaining pages to hold a block of outer $R$. For each matching tuple $r$ in $R$-block, $s$ in $S$-page, add $<r, s>$ to result. Then read next $R$-block, scan $S$, etc. $M + (M/block\ size) * N$.  With sequential read considered, analysis changes: may be best to divide buffers evenly between $R$ and $S$.\\
+{\bf Sort-Merge Join} Sort $R$ and $S$ on the join column, then scan them to do a merge (on join column), and output result tuples. Advance scan of $R$ until current $R$-tuple $\geq$ current $S$ tuple, then advance scan of $S$ until current $S$-tuple $\geq$ current $R$ tuple; do this until current $R$ tuple $=$ current $S$ tuple. At this point, all $R$ tuples with same value in $R_i$ (current $R$ group) and all $S$ tuples with same value in $S_j$ (current $S$ group) match; output $<r, s>$ for all pairs of such tuples. Then resume scanning $R$ and $S$. \\
+$R$ is scanned once; each $S$ group is scanned once per matching $R$ tuple. (Multiple scans of an $S$ group are likely to find needed pages in buffer). Cost: $M \log{M} + N\log{N} + (M+N)$, the cost of scanning is $M+N$, could be $M*N$ (very unlikely). \\
+{\bf Refinement} We can combine the merging phases in the sorting of $R$ and $S$ with the merging required for the join. With $B>\sqrt{L}$, where $L$ is the size of the larger relation, using the sorting refinement that produces runs of length $2B$ in Pass 0, number of runs of each relation is < $B/2$. Allocate 1 page per run of each relation, and merge while checking the join condition. Cost: read+write each relation in Pass 0 + read each relation in (only) merging pass (+ writing of result tuples). In practice, cost of sort-merge join, like the cost of external sorting, is linear. \\
+{\bf Hash Join} Partition both relations using hash function h: $R$ tuples in partition $i$ will only match $S$ tuples in partition $i$. Number of partitions $k < B-1$ (number of output buffers in partitioning phase, and $B-2 >$ size of largest partition to be held in memory. Assuming uniformly sized partitions, and maximizing $k$, we get: $k= B-1$, and $M/(B-1) < B-2$, i.e., $B$ must be $ > \sqrt{M}$. If we build an in-memory hash table to speed up thematching of tuples, a little more memory is needed. If the hash function does not partition uniformly, one or more $R$ partitions may not fit in memory. Can apply hash-join technique recursively to do the join of this $R$-partition with corresponding $S$-partition. In partitioning phase, read+write both relations; $2(M+N)$. In matching phase, read both relations; $M+N$ I/Os.\\
+{\bf  Sort-Merge Join vs. Hash Join} Given a minimum amount of memory ($B > \sqrt{M}$ for hash join, $B > \sqrt{N}$ for Sort-Merge join, where N is \#pages of the large relation and M is the \#pages of the smaller relation) both have a cost of $3(M+N)$ I/Os. Hash Join superior on this count if relation sizes differ greatly (as Sort-Merge's memory requirement depends on the larger relation size). Also, Hash Join shown to be highly parallelizable. Sort-Merge less sensitive to data skew (when partitions in hash joins are not uniformly sized); result is sorted.\\
+{\bf General Join Conditions} Equalities over several attributes (e.g. $R.sid=S.sid AND R.rname=S.sname$): For Index NL, build index on $<sid, sname>$ (if $S$ is inner); or use existing indexes on $sid$ or $sname$. For Sort-Merge and Hash Join, sort/partition on combination of the two join columns. Inequality conditions (e.g. $R.rname < S.sname$): For Index NL, need (clustered!) B+ tree index (range probes on inner; \#matches likely to be much higher than for equality joins). Hash Join, Sort Merge Join not applicable. Block NL quite likely to be the best join method here.
+
+\subsection{Selection}
+Cost depends on \#qualifying tuples, and clustering. Cost of finding qualifying data entries (typically small) plus cost of retrieving records (could be large w/o clustering). Assuming uniform distribution of names, about 10\% of tuples qualify (e.g., 100 pages, 10000 tuples). With a clustered index, cost is little more than 100 I/Os; if unclustered, up to 10000 I/Os! Important refinement for unclustered indexes: 1) Find qualifying data entries. 2)  Sort the rid?s of the data records to be retrieved. 3) Fetch rids in order. This ensures that each data page is looked at just once (though \# of such pages likely to be higher than with clustering).\\
+{\bf General Approach}  First approach: Find the most selective access path, retrieve tuples using it, and apply any remaining terms that don?t match the index. Most selective access path: An index or file scan that we estimate will require the fewest page I/Os. Terms that match this index reduce the number of tuples retrieved; other terms are used to discard some retrieved tuples, but do not affect number of tuples/pages fetched. \\
+Second approach (if we have 2 or more matching indexes that use Alternatives (2) or (3) for data entries): Get sets of rids of data records using each matching index. Then intersect these sets of rids, retrieve the records and apply any remaining terms.
+
+\subsection{Projection}
+An approach based on sorting. Modify Pass 0 of external sort to eliminate unwanted fields. Thus, runs of about 2B pages are produced, but tuples in runs are smaller than input tuples. (Size ratio depends on \# and size of fields that are dropped.) Modify Pass 0 \& merging passes to eliminate duplicates. Thus, number of result tuples smaller than input. (Difference depends on \# of duplicates.) Cost: In Pass 0, read original relation (size M), write out same number of smaller (distinct) tuples. In merging passes, fewer tuples written out in each pass. Reserves: 1000 input pages reduced to 250 in Pass 0 if size ratio is 0.25. \\
+Projection based on hashing. Partitioning phase: Read R using one input buffer. For each tuple, discard unwanted fields, apply hash function h1 to choose one of B-1 output buffers. Result is B-1 partitions (of tuples with no unwanted fields). 2 tuples from different partitions guaranteed to be distinct. Duplicate elimination phase: For each partition, read it and build an in-memory hash table, using hash fn h2 (not h1) on all fields, while discarding duplicates (If partition does not fit in memory, can apply hash-based projection algorithm recursively to this partition). Cost: For partitioning, read R, write out each tuple, but with fewer fields. This is read in next phase. \\
+Sort-based approach is the standard; better handling of skew and result is sorted. If an index on the relation contains all wanted attributes in its search key, can do index-only scan: apply projection techniques to data entries (much smaller!) If an ordered (i.e., tree) index contains all wanted attributes as prefix of search key, can do even better: Retrieve data entries in order (index-only scan), discard unwanted fields, compare adjacent tuples to check for duplicates.
+
+\subsection{Set}
+Intersection and cross-product special cases of join. Union (Distinct) and Except similar; we?ll do union. \\
+Sorting based approach to union: 1) Sort both relations (on combination of all attributes). 2) Remove duplicates (if not base relations). 3) Scan sorted relations and merge them. Alternative: Merge runs from Pass 0 for both relations. \\
+Hash based approach to union: 1) Partition R and S using hash function h. 2) For each S-partition, build in-memory hash table (using h2), scan corresponding R-partition and add to table while discarding duplicates.
+
+\subsection{Aggregate Operations}
+Without grouping: In general, requires scanning the relation. Given index whose search key includes all attributes in the SELECT (if there is no WHERE), can do index-only scan.\\
+With grouping: Sort on group-by attributes, then scan relation and compute aggregate for each group. (Can improve upon this by combining sorting and aggregate computation.) Similar approach based on hashing on group-by attributes. Given tree index whose search key includes all attributes in SELECT,WHERE and GROUP BY clauses, can do index-only scan; if group-by attributes form prefix of search key, can retrieve data entries/tuples in group-by order.
+
+\subsection{Impact of Buffering}
+If several operations are executing concurrently, estimating the number of available buffer pages is guesswork. Repeated access patterns interact with buffer replacement policy. e.g., Inner relation is scanned repeatedly in Simple Nested Loop Join. With enough buffer pages to hold inner, replacement policy does not matter. Otherwise, MRU is best, LRU is worst (sequential flooding). Does replacement policy matter for Block Nested Loops. (No, only one unpinned page is available for the scan of the inner relation). Replacement policy matters for index nested loop join as several tuples of the outer relation have the same value in the join attribute, there is a repeated pattern of access on the inner relation. We can maximize the repetition by sorting the outer relation on the join attributes.
+
+% You can even have references
+%\rule{0.3\linewidth}{0.25pt}
+\scriptsize
+\bibliographystyle{abstract}
+\bibliography{refFile}
+\end{multicols}
+\end{document}
