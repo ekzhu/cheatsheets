@@ -1,0 +1,88 @@
+\documentclass[10pt,landscape]{article}
+\usepackage{multicol}
+\usepackage{calc}
+\usepackage{ifthen}
+\usepackage[landscape]{geometry}
+\usepackage{amsmath,amsthm,amsfonts,amssymb}
+\usepackage{color,graphicx,overpic}
+\usepackage{hyperref}
+
+
+\pdfinfo{
+  /Title (example.pdf)
+  /Creator (TeX)
+  /Producer (pdfTeX 1.40.0)
+  /Author (Seamus)
+  /Subject (Example)
+  /Keywords (pdflatex, latex,pdftex,tex)}
+
+% This sets page margins to .5 inch if using letter paper, and to 1cm
+% if using A4 paper. (This probably isn't strictly necessary.)
+% If using another size paper, use default 1cm margins.
+\ifthenelse{\lengthtest { \paperwidth = 11in}}
+    { \geometry{top=.5in,left=.5in,right=.5in,bottom=.5in} }
+    {\ifthenelse{ \lengthtest{ \paperwidth = 297mm}}
+        {\geometry{top=1cm,left=1cm,right=1cm,bottom=1cm} }
+        {\geometry{top=1cm,left=1cm,right=1cm,bottom=1cm} }
+    }
+
+% Turn off header and footer
+\pagestyle{empty}
+
+% Redefine section commands to use less space
+\makeatletter
+\renewcommand{\section}{\@startsection{section}{1}{0mm}%
+                                {-1ex plus -.5ex minus -.2ex}%
+                                {0.5ex plus .2ex}%x
+                                {\normalfont\large\bfseries}}
+\renewcommand{\subsection}{\@startsection{subsection}{2}{0mm}%
+                                {-1explus -.5ex minus -.2ex}%
+                                {0.5ex plus .2ex}%
+                                {\normalfont\normalsize\bfseries}}
+\renewcommand{\subsubsection}{\@startsection{subsubsection}{3}{0mm}%
+                                {-1ex plus -.5ex minus -.2ex}%
+                                {1ex plus .2ex}%
+                                {\normalfont\small\bfseries}}
+\makeatother
+
+% Define BibTeX command
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+% Don't print section numbers
+\setcounter{secnumdepth}{0}
+
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt plus 0.5ex}
+
+%My Environments
+\newtheorem{example}[section]{Example}
+% -----------------------------------------------------------------------
+
+\begin{document}
+\raggedright
+\footnotesize
+\begin{multicols}{3}
+
+
+% multicol parameters
+% These lengths are set only within the two main columns
+%\setlength{\columnseprule}{0.25pt}
+\setlength{\premulticols}{1pt}
+\setlength{\postmulticols}{1pt}
+\setlength{\multicolsep}{1pt}
+\setlength{\columnsep}{2pt}
+
+\subsection{Parallel Job Scheduling}
+Job collection of processes/threads that cooperate to solve some problem/service. Threads in a job are not independent. How components of the job are scheduled has a major effect on performance Why Scheduling Matters Threads in a job are not independent. Synchronize over shared data, Consumer is waiting for data on queue, but producer is not running, Synchronizing phases of execution  Awareness Scheduler  Know threads are related, schedule all at same time - Space sharing: all threads from same job. Time sharing: group threads that should be scheduled together.  Space Sharing Scheduling each job has dedicated processors. Divide processors into groups(Fixed: Always 2 groups of 4 CPUs , Variable: Currently 3 groups of 2, 4, 2 CPUs; change as jobs come and go, Adaptive: Job can ask for more CPUs as it runs). Assign job to dedicated set of processors(ideally 1 CPU/thread in job). Job waits until required number of CPUs are available. Pros: all runnable threads execute at the same time, reduce context switch overhead, strong affinity Cons: CPU in one partition may be idle while another partition has multiple jobs waiting to run. Difficult to deal with dynamically-changing job sizes  Choosing Jobs to Run(optimal in terms of average wait time) At job creation, specify number of threads and scheduler finds set of CPUs. Choose smallest expected number of CPU cycles. cycles = num_cpus*runtime. Space Sharing - FCFS Scheduling: Convoy Effect:  Long average wait times due to large time by fragmentation of CPU space. Solution: Backfilling - Backfill is a scheduling optimization which allows a scheduler to make better use of available resources by running jobs out of order. It can help maximize cluster utilization and throughput by allowing smaller jobs farther back in the queue to run ahead of a job waiting at the front of the queue, as long as the job at the front is not delayed as a result. Variations On Backfilling  Easy: Used FCFS to order jobs in queue. Made reservation for first blocked job in queue. Backfilled jobs by looking at queue one at a time. Include priority in queue to control order. All queued jobs get a reservation if it has been waiting more than threshold. Time sharing multiple jobs share same processors. Each CPU may run threads from multiple jobs. Co-Scheduling Identify “working set” of processes that need to run together. Gang-Scheduling: All-or-nothing -> co-scheduled working set is all threads in the job. Gang Scheduling Issues: All CPUs must context switch together. To avoid ragmentation, construct groups of jobs that fill slot on each CPU e.g. 8-CPU system, group one 4 thread job with two 2 thread jobs. Inflexible - if 4 thread job blocks, should we block entire group or schedule group and leave 4 CPUs idle? Alternative1: Paired Gang scheduling - Identify groupings with complementary characteristics and pair them. When one blocks, the other runs. Alternative2: Only use gang scheduling for thread groups that benefit - Fill holes in schedule with any single runnable thread from those remaining Knowing About Spinlock spin_lock_acquire sets kernel visible flag so that scheduler will not immediately deschedule a thread with the flag set - Gives thread chance to complete critical section OS Noise How to schedule OS activities - Application is usually sequence of a computation followed by synchronization but if an event happens on a single node it can affect all other nodes. Massively parallel systems are typically split into I/O nodes, management nodes, and compute nodes(where real work get done). We can tolerate the noise by coscheduling the activities of the system software on each node. SLURM(Linux Utility for resource managements) Feature: FIFO, Backfilling, Gangscheduling, Priority-based preemption, topology aware scheduling Page Table Problems Space Overhead: 32 bit virtual address  2^20 PTEs 4 byte/PTE 4 MB/table. Solution: Hierarchical page table. Time Overhead:  Each virtual memory reference require multiple physical memory to reference. Solution: cache recently used translations in MMU. (TLB, Fully associative cache, indexed by VPN, entries are PTE, with PTE + offset can directly calculate physical address) Hashed Page Table Hash function maps virtual page number to bucket in fixed-size hash table. Hash table should have 1 bucket per physical page to keep expected chain length short. Overhead is fixed but Overhead is high (16bytes for 8 byte of mapping info) Superpage allows reducing the pressure on the TLB cache for large allocations while still keeping memory usage at a reasonable for small level. Supports both large and small pages - power of 2 size. 1 TLB entry per superpage. Contiguous, and virtually and physically aligned. Superpage Problems: Allocation : what frame to choose on page fault. When a page in a memory object is first touched by the application, the OS allocates physical page frame, and maps it into application’s address space. When OS wish to create a superpage for the object, already allocated pages may require relocation to satisfy contiguity and alignment constraints of superpages. (Copying cost is really expensive) Alternative Approach(better approach): Reservation-based allocation OS may optimistically choose the desired superpage size as the largest supported size that is smaller or equal to the size of the memory; Preemptive reservations Promotion: combine base pages into superpage. Once a certain number of base pages within a potential superpage have been allocated, assuming that the set of pages satisfy constraints on size, contiguity, alignment and protection OS decide to promote them into superpage. Involves updating the page table entires for each of the constituent base pages of superpage to reflect the new superpage size.
+
+It becomes single TLB entry storing the translation for any address within the superpage suffices to map the entire superpage. Demotion: break superpage into smaller superpages, or base pages. when process is no longer actively using all portions of superpage, and memory pressure calls for the eviction of unused base pages. Hardware only maintains a single reference bit for the superpage, making it difficult for the OS to efficiently detect which portions of superpage are actively used. Fragmentation: need contiguous physical pages to create superpage. When contiguous memory is plentiful, the OS succeeds in using superpages of the desired sizes, and achieves the maximum performance due to superpages. To sustain the benefits of super pages, the OS may proactively release contiguous chunk of inactive memory from previous allocations, at the possible expense of having to perform disk I/O later. The OS may also preempt an existing, partially used reservation, given the possibility that the reservation may never become a superpage. The OS must therefore treat contiguity as a potentially contended resource, and trade off the impact of various contiguity restoration techniques against benefits of using large superpages.
+
+% You can even have references
+%\rule{0.3\linewidth}{0.25pt}
+\scriptsize
+\bibliographystyle{abstract}
+\bibliography{refFile}
+\end{multicols}
+\end{document}
