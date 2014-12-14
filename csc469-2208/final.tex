@@ -83,7 +83,7 @@ Cons: Inflexible: CPUs in one partition may be idle while another partition has 
 {\bf Backfilling}: Fill CPU “holes” from queue in FCFS order. Not FCFS anymore. Want to prevent ``fill'' from delaying threads that were in queue earlier.\\
 {\bf Time sharing:} Each CPU may run threads from multiple jobs, but with awareness of jobs.
 {\bf Gang Scheduling}: All-or-nothing, co-scheduled working set is all threads in the job. Get scheduling benefits of dedicated machine. Allows all jobs to get service. {\bf Issues:} All CPUs must context switch together. To avoid fragmentation, construct groups of jobs that fill a slot on each CPU. 8-CPU system, group one 4-thread job with two 2-thread jobs. Alternative 1: Paired gang scheduling - Identify groupings with complementary characteristics and pair them. When one blocks, the other runs. Alternative 2: Only use gang scheduling for thread groups that benefit. Fill holes in schedule with any single runnable thread from those remaining.\\
-{\bf OS Noise} or how to schedule OS activities. Asynchronous OS activities perturb nice scheduling properties of running jobs together. Massively parallel systems are typically split into I/O nodes, management nodes, and compute nodes. Compute nodes are where the real work gets done. Run customized, lightweight kernel on compute nodes. Run full-blown OS on I/O nodes and mgmt nodes. {\bf Buffered coscheduling}: tolerate the noise by coscheduling the activities of the system software on each node.
+{\bf OS Noise} or OS activities. Asynchronous OS activities perturb nice scheduling properties of running jobs together. A job thread is delayed in reaching an application barrier synchronization point, which means all threads stall until the straggler catches up. Massively parallel systems are typically split into I/O nodes, management nodes, and compute nodes. Compute nodes are where the real work gets done. Run customized, lightweight kernel on compute nodes. Run full-blown OS on I/O nodes and mgmt nodes. {\bf Buffered coscheduling}: tolerate the noise by coscheduling the activities of the system software on each node.
 
 \subsection{Virtual Memory}
 {\bf Superpages:} page sizes are power-of-two multiples of the base page size.
@@ -113,21 +113,51 @@ Typically builds on existing virtual address translation hardware,
 augmented with software support for remote page fetch and consistency control.\\
 
 \subsection{Distributed Systems}
+{\bf Happens Before} $A \Rightarrow B$ if 
+1) $A$ and $B$ are executed at the same process, and $A$
+occurs before $B$, 
+2) $A = send(m)$ and $B = receive(m)$ for some message $m$, or there is an event $C$ such that $A \Rightarrow C$ and $C \Rightarrow B$. 
+{\bf Lamport logical timestamp} $T$ such that: If $A \Rightarrow B$ then $T(A) < T(B)$.
+{\bf Vector timestamp} $T$ such that: $A \Rightarrow B$ if and only if $T(A) < T(B)$ and $T(A) < T(B) \equiv [\forall j: T(A)[j] \le T(B)[j] \wedge \exists j: T(A)[j] < T(B)[j]]$.\\
+
+A {\bf distributed algorithm} is an algorithm that runs on more than one process. Properties: 1) Safety, means that some particular ``bad'' thing never happens. 2) Liveness: indicates that some particular ``good'' thing will (eventually) happen.\\
+{\bf Synchronous timing assumptions} 
+1) Processes share a clock. 2) Timestamps mean something between processes. 3) Communication can be guaranteed to occur in some number of clock cycles.
+{\bf Asynchronous timing assumption}
+1) Processes operate asynchronously from one another.
+2) No claims can be made about whether another process is running slowly or has failed.
+3) There is no time bound on how long it takes for a message to be delivered.
+{\bf Partial synchrony assumption} ``Timing-based distributed algorithms''. Processes have some information about time:
+1) Clocks that are synchronized within some bound 
+2) Approximate bounds on message-deliver time
+3) Use of timeouts
+
+{\bf Failure Model} A process that behaves according to its I/O specification throughout its execution is called correct. A process that deviates from its specification is faulty.
+{\bf Fail-Stop failures} A failure results in the process, $p$, stopping, and $p$ works correctly until the point of failure. $p$ does not send any more messages. $p$ does not perform actions when messages are sent to it. Other processes can detect that $p$ has failed.
+{\bf Heartbeat protocols} Assumes partially synchronous environment. Processes send “I’m Alive” messages to all other processes regularly. If process $i$ does not hear from process $j$ in some time $T = T_{delivery} + T_{heartbeat}$ then it determines that $j$ has failed. Depends on $T_{delivery}$ being known and accurate.
 {\bf Byzantine Failure} Failure model in which faulty process exhibits arbitrary behavior. 
 Typically modelled as malicious attackers to capture worst case behavior; 
 faulty processes may collude with other failed processes but are not more 
 powerful than non-failed ones.\\
+
+{\bf Distributed Consensus} N processes have to agree on a single value. Each process begins with a value (default). Each process can irrevocably decide on a value. Up to $f < n$ processes may be faulty. {\bf Properties:} 
+1) Agreement. If any correct process believes that V is the consensus value, then all correct processes believe V is the consensus value.
+2) Validity. If V is the consensus value, then some process proposed V.
+3) Termination. Each process decides some value V. 
+Agreement and Validity are Safety Properties. Termination is a Liveness property.
+
+{\bf Asynch. Distributed Consensus} is impossible for Fail-Stop/Byzantine. (FLP) impossibility result: 1) Asynchronous assumption makes it impossible to differentiate between failed and slow processes. Therefore termination (liveness) cannot be guaranteed. 2) If an algorithm terminates it may violate agreement (safety), since a slow process may decide differently than other processes thus violating the agreement property.
 
 \subsection{Fault Tolerance and RSM}
 {\bf Replicated State Machine:} A state machine consists of state variables and commands that modify state variables (causing state changes) and/or produce output. They are deterministic, so the same sequences of commands applied to the same state leads to the same output. Replicate the state machine on different servers. Clients interact with sets of servers.\\
 Fault tolerant services are provided by having multiple replicas of the service all handle the same set of requests. As long as any instance is alive, the client can get a response (assuming fail-stop failures).\\
 {\bf State Machine Commands:} A message that the state machine receives. 
 Commands must execute atomically with respect to other commands (linearizability). Commands modify state variables and/or produce outputs. The state/output of a state machine is completely determined by the initial state and the sequence of commands.\\
-{\bf RSM Failure} In the case of failures, clients must determine correct output of RSMs. RSMs are called $t$-tolerant: 1) Fail-stop: $t + 1$ replicas required (1 correct replica sufficient); 2) Byzantine: $2t + 1$ replicas required ($t + 1$ correct replicas sufficient). Different than Broadcast/Consensus failures - ine client must decide on result, replicas don't have to agree with each other about result.\\
+{\bf RSM Failure} In the case of failures, clients must determine correct output of RSMs. RSMs are called $t$-tolerant: 1) Fail-stop: $t + 1$ replicas required (1 correct replica sufficient); 2) Byzantine: $2t + 1$ replicas required ($t + 1$ correct replicas sufficient). Different than Broadcast/Consensus failures - the client must decide on result, replicas don't have to agree with each other about result.\\
 Atomic broadcast is required for RSM because we must guarantee that all replicas process the same commands in exactly the same order, since all correct replicas must have the same state; otherwise they may not produce the same output. This is a form of distributed consensus.\\
 {\bf Reliable Broadcast} (diffusion): all correct processes take on role of broadcaster upon receipt of message. Failures assumed to be fail-stop.
 {\bf Properties of Send/Receive:}
-1) Validity: If $p$ sends $m$ to $q$, and both $p$ and $q$ and the link between them are correct, then￼$q$ eventually receives $m$ (liveness). 2) Uniform Integrity: For any message $m$, $q$ receives $m$ at most once from $p$, and only if $p$ previously sent $m$ to $q$ (safety) e.g. Communication with TCP.
+1) Validity: If $p$ sends $m$ to $q$, and both $p$ and $q$ and the link between them are correct, then $q$ eventually receives $m$ (liveness). 2) Uniform Integrity: For any message $m$, $q$ receives $m$ at most once from $p$, and only if $p$ previously sent $m$ to $q$ (safety) e.g. Communication with TCP.
 {\bf Properties of Broadcast/Deliver:}
 1) Validity: If a correct process broadcasts a message $m$, then all correct processes eventually deliver $m$. 2) Agreement: If a correct process delivers a message $m$, then all correct processes eventually deliver $m$. 3) Integrity: For any message $m$, every correct process delivers $m$ at most once, and only if $m$ was previously broadcast by $send(m)$.\\
 {\bf FIFO Order:} If a process broadcasts a message m before it broadcasts a message m', then no correct process delivers m' unless it has previously delivered m. 
@@ -141,13 +171,36 @@ the system (i.e. weights can be assigned to servers).
 {\bf Quorums} are a generalization of voting, organize servers into logical structures, Overlap constraint: every write quorum must overlap with every read quorum (e.g. writes must go to a column, reads must get a row).
 
 \subsection{Reliable Storage}
-{\bf LFS Crash Recovery} LFS keeps two special “checkpoint regions” that record 1) the locations of the inode map blocks, 2) the segment usage table, 3) the address of the last block written in the log, and 4) a timestamp. On crash recovery, the checkpoint region with the most recent timestamp is used. The file system state (inode map and end of log) is consistent when the checkpoint is written, so we could start from that point, but modifications made between checkpoints would be lost. Instead, LFS rolls forward, reading the log from the end location recorded in the checkpoint and applying changes according to the operation log stored with each segment, thereby recovering a more up-to-date version of the file system while maintaining consistency.
+{\bf LFS Crash Recovery} LFS keeps two special checkpoint regions that record 1) the locations of the inode map blocks, 2) the segment usage table, 3) the address of the last block written in the log, and 4) a timestamp. On crash recovery, the checkpoint region with the most recent timestamp is used. The file system state (inode map and end of log) is consistent when the checkpoint is written, so we could start from that point, but modifications made between checkpoints would be lost. Instead, LFS rolls forward, reading the log from the end location recorded in the checkpoint and applying changes according to the operation log stored with each segment, thereby recovering a more up-to-date version of the file system while maintaining consistency.\\
+{\bf RAID} {\bf Parity} Use one disk to store parity data. XOR of all data blocks in stripe. Can recover any data block from all others + parity block. 
+{\bf RAID 1} Redundancy via replication, two (or more) copies. Mirroring, shadowing, duplexing, etc. Write both, read either.
+{\bf RAID 2 and 3} Very small stripe unit (single byte or word). All writes update parity disk(s). Can correct single-bit errors. Level 2: \#parity disks = Log2(\#data disks). Level 3: One extra disk.
+{\bf RAID 4-6} introduce independence: each disk may be writing different data. Level 5 removes parity disk bottleneck: distributes parity bits across all data disks. Level 6 tolerates 2 errors.
+
 
 \subsection{Security}
-{\bf Vulnerability} A software flaw with a security implication.\\
+{\bf Goals} Confidentiality - keep information content away from the unauthorized.
+Integrity - prevent undetected, unauthorized modification of data
+Availability - ensure that resources and services are available when needed
+Authentication - prove the identity of entities or source of information
+Non-repudiation - prevent denial of previous commitments
+Privacy and Anonymity - prevent Big Brother from invading your space\\
+
+{\bf Threat} A potential vector (means, mechanism) for a system’s security to be compromised. An attack exercises a threat. A successful attacks leads to a security compromise. Examples: network traffic arriving from the Internet; self-administered systems connected to a corporate (or university) LAN.\\
+
+A {\bf vulnerability} is a flaw in a system that has a security implication. A software flaw with a security implication. Compromises occur when attacker matches threats with vulnerabilities.\\
+
+{\bf Buffer Overruns} C uses character arrays for strings (and for arrays). C compilers do no bounds checking on arrays. Allow corruption of data.
+{\bf Stack Overruns} can give control of execution. Happens when buffers allocated on stack. Since return address also on stack, attacker can subvert return address, insert code to be executed and point the return address at the new code.
+{\bf Formate String Bugs} C library formatted I/O strings can allow almost arbitrary inspection and modification of program if misused
+
+{\bf Firewalls} Perimeter defenses for nets with unsafe hosts. Single point of control and expertise. Access limitation and auditing, limits communication to/from the outside world, only leave a very few machines exposed to direct attack.
+{\bf Access control}  Common Assumption: system knows identity of user (authentication); access requests pass through some gatekeeper (authorization).
+{\bf FreeBSD jails} are an example of an OS security mechanism. The idea is to give a process (and all its descendants) an isolated view of the system, including a limited view of the file system and its own superuser account, which can only affect things contained within the same jail.
+{\bf seccomp} Sandbox mechanism available in Linux. Performs filtering on system calls.
+
 {\bf Why buggy programs lead to compromised systems?} 
-Certain classes of bugs (such as buffer overflows or format string vulnerabilities) result from improper handling of user input, and allow an attacker to gain control over the process running the buggy program. By itself, this would not lead to a compromised system, just a compromised process, but many OSs do not provide proper separation of authorization or privilege domains. (For example, setuid programs in Unix, or allowing any user to write the registry in Windows) In many cases, this means that a compromised process can in fact be used to compromise the system.\\
-FreeBSD jails are an example of an OS security mechanism that addresses this problem. The idea is to give a process (and all its descendants) an isolated view of the system, including a limited view of the file system and its own superuser account, which can only affect things contained within the same jail.\\
+Certain classes of bugs (such as buffer overflows or format string vulnerabilities) result from improper handling of user input, and allow an attacker to gain control over the process running the buggy program. By itself, this would not lead to a compromised system, just a compromised process, but many OSs do not provide proper separation of authorization or privilege domains. (For example, $setuid$ programs in Unix, or allowing any user to write the registry in Windows) In many cases, this means that a compromised process can in fact be used to compromise the system.\\
 
 % You can even have references
 %\rule{0.3\linewidth}{0.25pt}
