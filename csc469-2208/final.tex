@@ -186,11 +186,9 @@ Fault tolerant services are provided by having multiple replicas of the service 
 {\bf State Machine Commands:} A message that the state machine receives. 
 Commands must execute atomically with respect to other commands (linearizability). Commands modify state variables and/or produce outputs. The state/output of a state machine is completely determined by the initial state and the sequence of commands.
 
-{\bf RSM Failure} In the case of failures, clients must determine correct output of RSMs. RSMs are called $t$-tolerant: 1) Fail-stop: $t + 1$ replicas required (1 correct replica sufficient); 2) Byzantine: $2t + 1$ replicas required ($t + 1$ correct replicas sufficient). Different than Broadcast/Consensus failures - the client must decide on result, replicas don't have to agree with each other about result.
+{\bf RSM Failure} In the case of failures, clients must determine correct output of RSMs. RSMs are called $t$-tolerant: 1) Fail-stop: $t + 1$ replicas required (1 correct replica sufficient); 2) Byzantine: $2t + 1$ replicas required ($t + 1$ correct replicas sufficient). Different than Broadcast/Consensus failures - one client must decide on result, replicas don't have to agree with each other about result.
 
-Atomic broadcast is required for RSM because we must guarantee that all replicas process the same commands in exactly the same order, since all correct replicas must have the same state; otherwise they may not produce the same output. This is a form of distributed consensus.
-
-{\bf Reliable Broadcast} (diffusion): all correct processes take on role of broadcaster upon receipt of message. Failures assumed to be fail-stop.
+{\bf Diffusion}: all correct processes take on role of broadcaster upon receipt of message. Failures assumed to be fail-stop.
 {\bf Properties of Send/Receive:}
 1) Validity: If $p$ sends $m$ to $q$, and both $p$ and $q$ and the link between them are correct, then $q$ eventually receives $m$ (liveness). 2) Uniform Integrity: For any message $m$, $q$ receives $m$ at most once from $p$, and only if $p$ previously sent $m$ to $q$ (safety) e.g. Communication with TCP.
 {\bf Properties of Broadcast/Deliver:}
@@ -198,13 +196,15 @@ Atomic broadcast is required for RSM because we must guarantee that all replicas
 
 {\bf FIFO Order:} If a process broadcasts a message m before it broadcasts a message m', then no correct process delivers m' unless it has previously delivered m. 
 {\bf Causal Order:} If the broadcast of a message m causally precedes the broadcast of a message m', then no correct process delivers m' unless it has previously delivered m. 
-Total Order: All correct processes deliver messages in the same order.
+{\bf Total Order:} All correct processes deliver messages in the same order.
 
 {\bf FIFO broadcast:} layered on top of Reliable Broadcast. Each process $p$ maintains, for each other process $q_i$, the next sequence number it can $FIFODeliver$. Buffers $ReliableDeliver$'ed messages until the sequence number indicates message may be $FIFODeliver$'ed.
 
 {\bf Causal broadcast} algorithm is layered on top of FIFO alg. $CausalBroadcast$ prepends list of messages upon which $m$ causally depends then calls $FIFOBroadcast$. Dependent messages is the list of messages $CausalDeliver$'ed since last $CausalBroadcast$. Buffers $FIFODeliver$'ed messages until all messages upon which $m$ depends have been $CausalDeliver$'ed.
 
 {\bf Distributed Consensus:} Servers communicate amongst themselves to reach agreement on state.
+{\bf Atomic broadcast} is required for RSM because we must guarantee that all replicas process the same commands in exactly the same order, since all correct replicas must have the same state; otherwise they may not produce the same output. This is a form of distributed consensus.
+
 {\bf Voting} Let V be the number of votes in the system; let W be the number of votes required to write; let R be the number of votes required to read. Overlap Constraint: $R + W > V$. Recommend: $2W > V$ and $R + W < V + \epsilon$. Data must contain a version number or timestamp. If constraints are met, then data will remain consistent. Votes can be arbitrarily assigned to servers in
 the system (i.e. weights can be assigned to servers).
 {\bf Quorums} are a generalization of voting, organize servers into logical structures, Overlap constraint: every write quorum must overlap with every read quorum (e.g. writes must go to a column, reads must get a row).
