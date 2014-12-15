@@ -1,4 +1,4 @@
-\documentclass[9pt,landscape]{article}
+\documentclass[6pt,landscape]{article}
 \usepackage{multicol}
 \usepackage{calc}
 \usepackage{ifthen}
@@ -20,7 +20,7 @@
 % if using A4 paper. (This probably isn't strictly necessary.)
 % If using another size paper, use default 1cm margins.
 \ifthenelse{\lengthtest { \paperwidth = 11in}}
-    { \geometry{top=.5in,left=.5in,right=.5in,bottom=.5in} }
+    { \geometry{top=.2in,left=.2in,right=.2in,bottom=.2in} }
     {\ifthenelse{ \lengthtest{ \paperwidth = 297mm}}
         {\geometry{top=1cm,left=1cm,right=1cm,bottom=1cm} }
         {\geometry{top=1cm,left=1cm,right=1cm,bottom=1cm} }
@@ -61,7 +61,7 @@
 % -----------------------------------------------------------------------
 
 \begin{document}
-\raggedright
+% \raggedright
 \footnotesize
 \begin{multicols}{3}
 
@@ -75,33 +75,41 @@
 \setlength{\columnsep}{2pt}
 
 \subsection{Parallel Job Scheduling}
-Job collection of processes/threads that cooperate to solve some problem/service (not independent).\\
+Job collection of processes/threads that cooperate to solve some problem/service (not independent).
+
 {\bf Space sharing} Divide processors into groups, assign job to dedicated set of processors, job waits until required number of CPUs are available (batch scheduling). Typically used on supercomputers.
 Pros: 1) All runnable threads execute at the same time; 2) Reduce context switch overhead (no involuntary preemption); 3) Strong affinity. 
 Cons: Inflexible: CPUs in one partition may be idle while another partition has multiple jobs waiting to run. Difficult to deal with dynamically-changing job sizes; Adaptive scheme is complicated and uncommon.
 {\bf Scheduling convoy effect} In FCFS, long average wait times due to large job. Exists with FCFS uniprocessor batch systems, and much worse in parallel systems, leads to fragmentation of CPU space.
-{\bf Backfilling}: Fill CPU “holes” from queue in FCFS order. Not FCFS anymore. Want to prevent ``fill'' from delaying threads that were in queue earlier.\\
+{\bf Backfilling}: Fill CPU “holes” from queue in FCFS order. Not FCFS anymore. Want to prevent ``fill'' from delaying threads that were in queue earlier.
+
 {\bf Time sharing:} Each CPU may run threads from multiple jobs, but with awareness of jobs.
-{\bf Gang Scheduling}: All-or-nothing, co-scheduled working set is all threads in the job. Get scheduling benefits of dedicated machine. Allows all jobs to get service. {\bf Issues:} All CPUs must context switch together. To avoid fragmentation, construct groups of jobs that fill a slot on each CPU. 8-CPU system, group one 4-thread job with two 2-thread jobs. Alternative 1: Paired gang scheduling - Identify groupings with complementary characteristics and pair them. When one blocks, the other runs. Alternative 2: Only use gang scheduling for thread groups that benefit. Fill holes in schedule with any single runnable thread from those remaining.\\
+{\bf Gang Scheduling}: All-or-nothing, co-scheduled working set is all threads in the job. Get scheduling benefits of dedicated machine. Allows all jobs to get service. {\bf Issues:} All CPUs must context switch together. To avoid fragmentation, construct groups of jobs that fill a slot on each CPU. 8-CPU system, group one 4-thread job with two 2-thread jobs. Alternative 1: Paired gang scheduling - Identify groupings with complementary characteristics and pair them. When one blocks, the other runs. Alternative 2: Only use gang scheduling for thread groups that benefit. Fill holes in schedule with any single runnable thread from those remaining.
+
 {\bf OS Noise} or OS activities. Asynchronous OS activities perturb nice scheduling properties of running jobs together. A job thread is delayed in reaching an application barrier synchronization point, which means all threads stall until the straggler catches up. Massively parallel systems are typically split into I/O nodes, management nodes, and compute nodes. Compute nodes are where the real work gets done. Run customized, lightweight kernel on compute nodes. Run full-blown OS on I/O nodes and mgmt nodes. {\bf Buffered coscheduling}: tolerate the noise by coscheduling the activities of the system software on each node.
 
 \subsection{Virtual Memory}
 {\bf Superpages:} page sizes are power-of-two multiples of the base page size.
 Must be aligned in both virtual and physical memory (e.g. 4 MB superpage must begin on a 4 MB address boundary in both spaces).
 TLB entry (copy of PTE) includes page size.
-Why multiple superpage sizes? - Different apps have different “best” size.\\
-{\bf The Superpage Problem:} allocation (what frame to choose on page fault), promotion (combine base pages into superpage), demotion (break superpage into smaller superpages, or base pages), fragmentation (need contiguous physical pages to create superpage).\\
+Why multiple superpage sizes? - Different apps have different “best” size.
+
+{\bf The Superpage Problem:} allocation (what frame to choose on page fault), promotion (combine base pages into superpage), demotion (break superpage into smaller superpages, or base pages), fragmentation (need contiguous physical pages to create superpage).
+
 {\bf Navarro et al' Design}
 Key observation: once an application touches the first page of a memory object then it is likely that it will quickly touch every page of that object.
 {\bf Allocation:} opportunistic, go for biggest size that is no larger than the memory object (e.g. file); if size not available, try preemption before resigning to a smaller size. Best candidate for preemption at front: reservation whose most recently populated frame was populated the least recently.
 {\bf Promotion:} opportunistic, superpage is created whenever any superpage-sized and aligned extent within a reservation is fully populated.
 {\bf Demotion:} 1) On memory pressure, demote superpages when resetting ref bit, help decide on eviction. Re-promote (incrementally) as pages are referenced. 2) Demote on first write to a clean superpage, only the written base pages are dirty. Re-promote (incrementally) as other pages are dirtied.
-{\bf Fragmentation:} Superpages creation/allocation requires multiple contiguous free physical memory pages (equal to the superpage size). With multiple page sizes, the unit of allocation is no longer uniform, and “holes” of different sizes appear in the physical memory space. Eventually, there may be enough free memory for a process, but no contiguous chunks large enough to create the desired superpage size. Solution: 1) Restore contiguity: move clean, inactive pages to the free list. 2) Re-locating allocated pages to create larger free contiguous chunks (coalescing), and biasing page reclamation to prefer pages that restore the largest contiguous chunks 3) Clustering wired pages.\\
+{\bf Fragmentation:} Superpages creation/allocation requires multiple contiguous free physical memory pages (equal to the superpage size). With multiple page sizes, the unit of allocation is no longer uniform, and “holes” of different sizes appear in the physical memory space. Eventually, there may be enough free memory for a process, but no contiguous chunks large enough to create the desired superpage size. Solution: 1) Restore contiguity: move clean, inactive pages to the free list. 2) Re-locating allocated pages to create larger free contiguous chunks (coalescing), and biasing page reclamation to prefer pages that restore the largest contiguous chunks 3) Clustering wired pages.
+
 {\bf Direct-mapped} Each block can be stored in exactly 1 location in the cache. Mapping is (block address) modulo (num blocks in cache).
 {\bf Fully associative} Any block can be stored in any cache line.
 {\bf Set associative} Each block can be stored in a restricted set of locations in the cache.
-Map block address to set first using (block addr) mod (num offsets), then place block within set. If N locations in a set, called N-way set associative.\\
-{\bf What addr in cache?} {\bf Virtual} 1) 􏱃does not need to be translated before checking cache; 2) application programmer can reason about conflicts; 3) cache needs to flushed on context switch. {\bf Physical} 1) data may stay in cache across context switches; 2) vaddr must be translated before checking cache; 3) 􏱄conflicts depend on what physical page is allocated.\\
+Map block address to set first using (block addr) mod (num offsets), then place block within set. If N locations in a set, called N-way set associative.
+
+{\bf What addr in cache?} {\bf Virtual} 1) 􏱃does not need to be translated before checking cache; 2) application programmer can reason about conflicts; 3) cache needs to flushed on context switch. {\bf Physical} 1) data may stay in cache across context switches; 2) vaddr must be translated before checking cache; 3) 􏱄conflicts depend on what physical page is allocated.
+
 {\bf Conflict-aware page placement:} OS can select physical pages on allocation to try to reduce cache conflicts. Assign a colour to each page such that pages with different colours do not conflict in the cache. All pages with same colour map to same lines or sets in the cache. Number of colours = (cache size) / (pg size * associativity). A page's colour is (page number) modulo (num colours).
 {\bf Page coloring:} Assign colour to virtual and physical pages. On page fault, allocate a physical page with the same colour as the virtual page. Exploits spatial locality. Programmer reasoning about virtual addresses still applies. OS keeps per-color free lists.
 {\bf Bin hopping:} Assign colors to physical pages and keep per-colour free lists as before. On page fault, allocate physical page of next colour from last one previously allocated. Exploits temporal locality.
@@ -110,7 +118,25 @@ Map block address to set first using (block addr) mod (num offsets), then place 
 Technique that allows distributed processes to transparently 
 share a global virtual address space, although physical memory may be located on many nodes. 
 Typically builds on existing virtual address translation hardware, 
-augmented with software support for remote page fetch and consistency control.\\
+augmented with software support for remote page fetch and consistency control.
+
+{\bf Sharing Granularity}
+{\bf Object-based:} 
+Pure software approach (can be a library). Individual objects are shared.
+More modular and flexible, better integration of synchronization and access.
+Allows granularity to be determined by object size, less false sharing.
+Disadvantage: compatibility with old programs, more overhead for object methods.
+{\bf Page-based:}
+Can leverage paging hardware (needs OS help).
+Unit of sharing is (multiple of) page size, making false sharing is more likely.
+
+{\bf Eager Release Consistency} 
+1) acquire access: obtain valid copies of all pages. 
+2) release access: send invalidations for shared pages that were modified locally to nodes that have copies, and waiting for all to acknowledge.
+{\bf Lazy Release Consistency} 
+On release, send invalidation to directory.
+On acquire, check with directory to see if new copy is needed.
+Reduces message traffic on release.
 
 \subsection{Distributed Systems}
 {\bf Happens Before} $A \Rightarrow B$ if 
@@ -118,9 +144,13 @@ augmented with software support for remote page fetch and consistency control.\\
 occurs before $B$, 
 2) $A = send(m)$ and $B = receive(m)$ for some message $m$, or there is an event $C$ such that $A \Rightarrow C$ and $C \Rightarrow B$. 
 {\bf Lamport logical timestamp} $T$ such that: If $A \Rightarrow B$ then $T(A) < T(B)$.
-{\bf Vector timestamp} $T$ such that: $A \Rightarrow B$ if and only if $T(A) < T(B)$ and $T(A) < T(B) \equiv [\forall j: T(A)[j] \le T(B)[j] \wedge \exists j: T(A)[j] < T(B)[j]]$.\\
+{\bf Vector timestamp} $T$ such that: $A \Rightarrow B$ if and only if $T(A) < T(B)$ and $T(A) < T(B) \equiv [\forall j: T(A)[j] \le T(B)[j] \wedge \exists j: T(A)[j] < T(B)[j]]$.
+If two events $A$ and $B$ are not related by the $\Rightarrow$ relation, then they are concurrent.
 
-A {\bf distributed algorithm} is an algorithm that runs on more than one process. Properties: 1) Safety, means that some particular ``bad'' thing never happens. 2) Liveness: indicates that some particular ``good'' thing will (eventually) happen.\\
+A {\bf distributed algorithm} is an algorithm that runs on more than one process. Properties: {\bf Safety}, means that some particular ``bad'' thing never happens. {\bf Liveness} indicates that some particular ``good'' thing will (eventually) happen.
+
+{\bf Timing model} specifies assumptions regarding delays between execution steps of a correct process, and delays between send \& receipt of a message sent between correct processes.
+
 {\bf Synchronous timing assumptions} 
 1) Processes share a clock. 2) Timestamps mean something between processes. 3) Communication can be guaranteed to occur in some number of clock cycles.
 {\bf Asynchronous timing assumption}
@@ -138,7 +168,7 @@ A {\bf distributed algorithm} is an algorithm that runs on more than one process
 {\bf Byzantine Failure} Failure model in which faulty process exhibits arbitrary behavior. 
 Typically modelled as malicious attackers to capture worst case behavior; 
 faulty processes may collude with other failed processes but are not more 
-powerful than non-failed ones.\\
+powerful than non-failed ones.
 
 {\bf Distributed Consensus} N processes have to agree on a single value. Each process begins with a value (default). Each process can irrevocably decide on a value. Up to $f < n$ processes may be faulty. {\bf Properties:} 
 1) Agreement. If any correct process believes that V is the consensus value, then all correct processes believe V is the consensus value.
@@ -149,33 +179,59 @@ Agreement and Validity are Safety Properties. Termination is a Liveness property
 {\bf Asynch. Distributed Consensus} is impossible for Fail-Stop/Byzantine. (FLP) impossibility result: 1) Asynchronous assumption makes it impossible to differentiate between failed and slow processes. Therefore termination (liveness) cannot be guaranteed. 2) If an algorithm terminates it may violate agreement (safety), since a slow process may decide differently than other processes thus violating the agreement property.
 
 \subsection{Fault Tolerance and RSM}
-{\bf Replicated State Machine:} A state machine consists of state variables and commands that modify state variables (causing state changes) and/or produce output. They are deterministic, so the same sequences of commands applied to the same state leads to the same output. Replicate the state machine on different servers. Clients interact with sets of servers.\\
-Fault tolerant services are provided by having multiple replicas of the service all handle the same set of requests. As long as any instance is alive, the client can get a response (assuming fail-stop failures).\\
+{\bf Replicated State Machine:} A state machine consists of state variables and commands that modify state variables (causing state changes) and/or produce output. They are deterministic, so the same sequences of commands applied to the same state leads to the same output. Replicate the state machine on different servers. Clients interact with sets of servers.
+
+Fault tolerant services are provided by having multiple replicas of the service all handle the same set of requests. As long as any instance is alive, the client can get a response (assuming fail-stop failures).
+
 {\bf State Machine Commands:} A message that the state machine receives. 
-Commands must execute atomically with respect to other commands (linearizability). Commands modify state variables and/or produce outputs. The state/output of a state machine is completely determined by the initial state and the sequence of commands.\\
-{\bf RSM Failure} In the case of failures, clients must determine correct output of RSMs. RSMs are called $t$-tolerant: 1) Fail-stop: $t + 1$ replicas required (1 correct replica sufficient); 2) Byzantine: $2t + 1$ replicas required ($t + 1$ correct replicas sufficient). Different than Broadcast/Consensus failures - the client must decide on result, replicas don't have to agree with each other about result.\\
-Atomic broadcast is required for RSM because we must guarantee that all replicas process the same commands in exactly the same order, since all correct replicas must have the same state; otherwise they may not produce the same output. This is a form of distributed consensus.\\
+Commands must execute atomically with respect to other commands (linearizability). Commands modify state variables and/or produce outputs. The state/output of a state machine is completely determined by the initial state and the sequence of commands.
+
+{\bf RSM Failure} In the case of failures, clients must determine correct output of RSMs. RSMs are called $t$-tolerant: 1) Fail-stop: $t + 1$ replicas required (1 correct replica sufficient); 2) Byzantine: $2t + 1$ replicas required ($t + 1$ correct replicas sufficient). Different than Broadcast/Consensus failures - the client must decide on result, replicas don't have to agree with each other about result.
+
+Atomic broadcast is required for RSM because we must guarantee that all replicas process the same commands in exactly the same order, since all correct replicas must have the same state; otherwise they may not produce the same output. This is a form of distributed consensus.
+
 {\bf Reliable Broadcast} (diffusion): all correct processes take on role of broadcaster upon receipt of message. Failures assumed to be fail-stop.
 {\bf Properties of Send/Receive:}
 1) Validity: If $p$ sends $m$ to $q$, and both $p$ and $q$ and the link between them are correct, then $q$ eventually receives $m$ (liveness). 2) Uniform Integrity: For any message $m$, $q$ receives $m$ at most once from $p$, and only if $p$ previously sent $m$ to $q$ (safety) e.g. Communication with TCP.
 {\bf Properties of Broadcast/Deliver:}
-1) Validity: If a correct process broadcasts a message $m$, then all correct processes eventually deliver $m$. 2) Agreement: If a correct process delivers a message $m$, then all correct processes eventually deliver $m$. 3) Integrity: For any message $m$, every correct process delivers $m$ at most once, and only if $m$ was previously broadcast by $send(m)$.\\
+1) Validity: If a correct process broadcasts a message $m$, then all correct processes eventually deliver $m$. 2) Agreement: If a correct process delivers a message $m$, then all correct processes eventually deliver $m$. 3) Integrity: For any message $m$, every correct process delivers $m$ at most once, and only if $m$ was previously broadcast by $send(m)$.
+
 {\bf FIFO Order:} If a process broadcasts a message m before it broadcasts a message m', then no correct process delivers m' unless it has previously delivered m. 
 {\bf Causal Order:} If the broadcast of a message m causally precedes the broadcast of a message m', then no correct process delivers m' unless it has previously delivered m. 
-Total Order: All correct processes deliver messages in the same order.\\
-{\bf FIFO broadcast:} layered on top of Reliable Broadcast. Each process $p$ maintains, for each other process $q_i$, the next sequence number it can $FIFODeliver$. Buffers $ReliableDeliver$'ed messages until the sequence number indicates message may be $FIFODeliver$'ed.\\
-{\bf Causal broadcast} algorithm is layered on top of FIFO alg. $CausalBroadcast$ prepends list of messages upon which $m$ causally depends then calls $FIFOBroadcast$. Dependent messages is the list of messages $CausalDeliver$'ed since last $CausalBroadcast$. Buffers $FIFODeliver$'ed messages until all messages upon which $m$ depends have been $CausalDeliver$'ed.\\ 
+Total Order: All correct processes deliver messages in the same order.
+
+{\bf FIFO broadcast:} layered on top of Reliable Broadcast. Each process $p$ maintains, for each other process $q_i$, the next sequence number it can $FIFODeliver$. Buffers $ReliableDeliver$'ed messages until the sequence number indicates message may be $FIFODeliver$'ed.
+
+{\bf Causal broadcast} algorithm is layered on top of FIFO alg. $CausalBroadcast$ prepends list of messages upon which $m$ causally depends then calls $FIFOBroadcast$. Dependent messages is the list of messages $CausalDeliver$'ed since last $CausalBroadcast$. Buffers $FIFODeliver$'ed messages until all messages upon which $m$ depends have been $CausalDeliver$'ed.
+
 {\bf Distributed Consensus:} Servers communicate amongst themselves to reach agreement on state.
 {\bf Voting} Let V be the number of votes in the system; let W be the number of votes required to write; let R be the number of votes required to read. Overlap Constraint: $R + W > V$. Recommend: $2W > V$ and $R + W < V + \epsilon$. Data must contain a version number or timestamp. If constraints are met, then data will remain consistent. Votes can be arbitrarily assigned to servers in
 the system (i.e. weights can be assigned to servers).
 {\bf Quorums} are a generalization of voting, organize servers into logical structures, Overlap constraint: every write quorum must overlap with every read quorum (e.g. writes must go to a column, reads must get a row).
 
 \subsection{Reliable Storage}
-{\bf LFS Crash Recovery} LFS keeps two special checkpoint regions that record 1) the locations of the inode map blocks, 2) the segment usage table, 3) the address of the last block written in the log, and 4) a timestamp. On crash recovery, the checkpoint region with the most recent timestamp is used. The file system state (inode map and end of log) is consistent when the checkpoint is written, so we could start from that point, but modifications made between checkpoints would be lost. Instead, LFS rolls forward, reading the log from the end location recorded in the checkpoint and applying changes according to the operation log stored with each segment, thereby recovering a more up-to-date version of the file system while maintaining consistency.\\
-{\bf RAID} {\bf Parity} Use one disk to store parity data. XOR of all data blocks in stripe. Can recover any data block from all others + parity block. 
-{\bf RAID 1} Redundancy via replication, two (or more) copies. Mirroring, shadowing, duplexing, etc. Write both, read either.
-{\bf RAID 2 and 3} Very small stripe unit (single byte or word). All writes update parity disk(s). Can correct single-bit errors. Level 2: \#parity disks = Log2(\#data disks). Level 3: One extra disk.
-{\bf RAID 4-6} introduce independence: each disk may be writing different data. Level 5 removes parity disk bottleneck: distributes parity bits across all data disks. Level 6 tolerates 2 errors.
+{\bf FFS crash recovery} examines entire contents, walk directory hierarchy and each file's block list. Identify unclaimed resources and incorrect counts, and rebuild free space/inode bitmaps.
+
+{\bf LFS crash recovery} LFS keeps two special checkpoint regions that record 1) the locations of the inode map blocks, 2) the segment usage table, 3) the address of the last block written in the log, and 4) a timestamp. On crash recovery, the checkpoint region with the most recent timestamp is used. The file system state (inode map and end of log) is consistent when the checkpoint is written, so we could start from that point, but modifications made between checkpoints would be lost. Instead, LFS rolls forward, reading the log from the end location recorded in the checkpoint and applying changes according to the operation log stored with each segment, thereby recovering a more up-to-date version of the file system while maintaining consistency.
+
+{\bf Update ordering rules (dependencies)} Purpose: integrity of metadata pointers in face of unpredictable system failures. Similar to rules of programming with pointers. 
+1) Resource Allocation: initialize resource before setting pointer.
+2) Resource De-allocation: nullify previous pointer before reuse.
+3) Resource ``Movement'': set new pointer before nullifying old one.
+{\bf Soft Updates} Efficiently satisfying update dependencies by delaying metadata writes - no waiting for disk. Protect consistency of disks by controlling order of writes: use write-back caching for all (non-fsync) updates, make sure updates propagate to disk in the correct order.
+% {\bf Update ordering problem:} doesn't work for bidirectional dependencies. Solution: some can be converted to single-dir, because some directions are more important than others, and clean-up must be done after system failures.
+{\bf Crash recovery:} Soft Updates requires none. Only inconsistencies are blocks marked as allocated but actually free, and can find theses blocks in background while using file system.
+
+{\bf Journaling File System} metadata changes first write to a journal, then write a commit record to the journal. Update real metadata and data after commit.
+{\bf ext3} Journal is just an ordinary (large) file, separates journaling from file system concerns. Uses physical redo journaling. Default journaling mode: metadata only. Journal space reclaimed by checkpointing.
+Journaling is handled by {\bf JBD} layer. JDB maintains single open transaction at a time, and new handles are added to current transaction. Records all blocks requested by transaction and periodically decides to commit. When commit, wait handlers to complete, and write to journal.
+Two modes for handling non-journaled data blocks: 1) {\bf Writeback:} data blocks are not ordered with respect to (journaled) metadata blocks. File can contain garbage (or worse!) after crash.
+2) {\bf Ordered:} data blocks must be flushed to disk before metadata blocks are committed to journal. Still challenging since blocks can change type (e.g. rmdir, reuse block for data, crash).
+
+% {\bf RAID} {\bf Parity} Use one disk to store parity data. XOR of all data blocks in stripe. Can recover any data block from all others + parity block. 
+% {\bf RAID 1} Redundancy via replication, two (or more) copies. Mirroring, shadowing, duplexing, etc. Write both, read either.
+% {\bf RAID 2 and 3} Very small stripe unit (single byte or word). All writes update parity disk(s). Can correct single-bit errors. Level 2: \#parity disks = Log2(\#data disks). Level 3: One extra disk.
+% {\bf RAID 4-6} introduce independence: each disk may be writing different data. Level 5 removes parity disk bottleneck: distributes parity bits across all data disks. Level 6 tolerates 2 errors.
 
 
 \subsection{Security}
@@ -184,23 +240,36 @@ Integrity - prevent undetected, unauthorized modification of data
 Availability - ensure that resources and services are available when needed
 Authentication - prove the identity of entities or source of information
 Non-repudiation - prevent denial of previous commitments
-Privacy and Anonymity - prevent Big Brother from invading your space\\
+Privacy and Anonymity - prevent Big Brother from invading your space
 
-{\bf Threat} A potential vector (means, mechanism) for a system’s security to be compromised. An attack exercises a threat. A successful attacks leads to a security compromise. Examples: network traffic arriving from the Internet; self-administered systems connected to a corporate (or university) LAN.\\
+{\bf Threat} A potential vector (means, mechanism) for a system’s security to be compromised. An attack exercises a threat. A successful attacks leads to a security compromise. Examples: network traffic arriving from the Internet; self-administered systems connected to a corporate (or university) LAN.
 
-A {\bf vulnerability} is a flaw in a system that has a security implication. A software flaw with a security implication. Compromises occur when attacker matches threats with vulnerabilities.\\
+A {\bf vulnerability} is a flaw in a system that has a security implication. A software flaw with a security implication. Compromises occur when attacker matches threats with vulnerabilities.
 
 {\bf Buffer Overruns} C uses character arrays for strings (and for arrays). C compilers do no bounds checking on arrays. Allow corruption of data.
 {\bf Stack Overruns} can give control of execution. Happens when buffers allocated on stack. Since return address also on stack, attacker can subvert return address, insert code to be executed and point the return address at the new code.
 {\bf Formate String Bugs} C library formatted I/O strings can allow almost arbitrary inspection and modification of program if misused
 
-{\bf Firewalls} Perimeter defenses for nets with unsafe hosts. Single point of control and expertise. Access limitation and auditing, limits communication to/from the outside world, only leave a very few machines exposed to direct attack.
+% {\bf Firewalls} Perimeter defenses for nets with unsafe hosts. Single point of control and expertise. Access limitation and auditing, limits communication to/from the outside world, only leave a very few machines exposed to direct attack.
 {\bf Access control}  Common Assumption: system knows identity of user (authentication); access requests pass through some gatekeeper (authorization).
 {\bf FreeBSD jails} are an example of an OS security mechanism. The idea is to give a process (and all its descendants) an isolated view of the system, including a limited view of the file system and its own superuser account, which can only affect things contained within the same jail.
 {\bf seccomp} Sandbox mechanism available in Linux. Performs filtering on system calls.
 
+{\bf Policy Flexibility} Defined in context of a state machine model. Requirements: 
+1) Support fine-grained access controls on low-level objects.
+2) Propagate access rights according to security policy.
+3) Deal with changes in policy over time, including revoking previously granted permissions.
+{\bf Flask} 1) Security server provides labeling, access and polyinstantiation decisions, security contexts and security identifiers (SIDs).
+2) Object managers bind labels to objects, enforce access decisions, and direct clients to appropriate instances.
+3) Access Vector Cache (AVC) library coordinates access decisions, minimizes performance impact.
+4) Underlying IPC mechanism provides identification of clients and servers.
+{\bf Evaluation of Flexibility} Support for policy changes, architecture provides support for system-wide atomicity, microkernel meets object manager atomicity requirements, other object managers lack support for migrated permissions.
+Set of operations controlled by policy: fine-grained controls over all object services.
+Set of operations that may be invoked by policy: object manager interfaces, AVC module interface
+System state available to policy: SID pairs sufficient for most policies (DTOS), use prototype to research need for richer interface.
+
 {\bf Why buggy programs lead to compromised systems?} 
-Certain classes of bugs (such as buffer overflows or format string vulnerabilities) result from improper handling of user input, and allow an attacker to gain control over the process running the buggy program. By itself, this would not lead to a compromised system, just a compromised process, but many OSs do not provide proper separation of authorization or privilege domains. (For example, $setuid$ programs in Unix, or allowing any user to write the registry in Windows) In many cases, this means that a compromised process can in fact be used to compromise the system.\\
+Certain classes of bugs (such as buffer overflows or format string vulnerabilities) result from improper handling of user input, and allow an attacker to gain control over the process running the buggy program. By itself, this would not lead to a compromised system, just a compromised process, but many OSs do not provide proper separation of authorization or privilege domains. (For example, $setuid$ programs in Unix, or allowing any user to write the registry in Windows) In many cases, this means that a compromised process can in fact be used to compromise the system.
 
 % You can even have references
 %\rule{0.3\linewidth}{0.25pt}
