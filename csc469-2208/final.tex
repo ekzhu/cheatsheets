@@ -226,7 +226,7 @@ the system (i.e. weights can be assigned to servers).
 {\bf ext3} Journal is just an ordinary (large) file, separates journaling from file system concerns. Uses physical redo journaling. Default journaling mode: metadata only. Journal space reclaimed by checkpointing.
 Journaling is handled by {\bf JBD} layer. JDB maintains single open transaction at a time, and new handles are added to current transaction. Records all blocks requested by transaction and periodically decides to commit. When commit, wait handlers to complete, and write to journal.
 Two modes for handling non-journaled data blocks: 1) {\bf Writeback:} data blocks are not ordered with respect to (journaled) metadata blocks. File can contain garbage (or worse!) after crash.
-2) {\bf Ordered:} data blocks must be flushed to disk before metadata blocks are committed to journal. Still challenging since blocks can change type (e.g. rmdir, reuse block for data, crash).
+2) {\bf Ordered:} data blocks must be flushed to disk before metadata blocks are committed to journal. Still challenging since blocks can change type (e.g. rmdir, reuse block for data, crash). Solution: synchronous delete, don't reuse metadata blocks until checkpointed out of journal, add ``revoke'' record in delete for freed directory block, scan ``revokes'' first, does not replay revoked blocks.
 
 % {\bf RAID} {\bf Parity} Use one disk to store parity data. XOR of all data blocks in stripe. Can recover any data block from all others + parity block. 
 % {\bf RAID 1} Redundancy via replication, two (or more) copies. Mirroring, shadowing, duplexing, etc. Write both, read either.
