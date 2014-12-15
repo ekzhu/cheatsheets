@@ -210,23 +210,20 @@ the system (i.e. weights can be assigned to servers).
 {\bf Quorums} are a generalization of voting, organize servers into logical structures, Overlap constraint: every write quorum must overlap with every read quorum (e.g. writes must go to a column, reads must get a row).
 
 \subsection{Reliable Storage}
-{\bf FFS crash recovery} examines entire contents, walk directory hierarchy and each file's block list. Identify unclaimed resources and incorrect counts, and rebuild free space/inode bitmaps.
-
-{\bf LFS crash recovery} LFS keeps two special checkpoint regions that record 1) the locations of the inode map blocks, 2) the segment usage table, 3) the address of the last block written in the log, and 4) a timestamp. On crash recovery, the checkpoint region with the most recent timestamp is used. The file system state (inode map and end of log) is consistent when the checkpoint is written, so we could start from that point, but modifications made between checkpoints would be lost. Instead, LFS rolls forward, reading the log from the end location recorded in the checkpoint and applying changes according to the operation log stored with each segment, thereby recovering a more up-to-date version of the file system while maintaining consistency.
-
+{\bf FFS crash recovery} examines entire contents, walk directory hierarchy and each file's block list. Identify unclaimed resources and incorrect counts, and rebuild free space/inode bitmaps.\\
+{\bf LFS crash recovery} LFS keeps two special checkpoint regions that record 1) the locations of the inode map blocks, 2) the segment usage table, 3) the address of the last block written in the log, and 4) a timestamp. On crash recovery, the checkpoint region with the most recent timestamp is used. The file system state (inode map and end of log) is consistent when the checkpoint is written, so we could start from that point, but modifications made between checkpoints would be lost. Instead, LFS rolls forward, reading the log from the end location recorded in the checkpoint and applying changes according to the operation log stored with each segment, thereby recovering a more up-to-date version of the file system while maintaining consistency.\\
 {\bf Update ordering rules (dependencies)} Purpose: integrity of metadata pointers in face of unpredictable system failures. Similar to rules of programming with pointers. 
 1) Resource Allocation: initialize resource before setting pointer.
 2) Resource De-allocation: nullify previous pointer before reuse.
 3) Resource ``Movement'': set new pointer before nullifying old one.
 {\bf Soft Updates} Efficiently satisfying update dependencies by delaying metadata writes - no waiting for disk. Protect consistency of disks by controlling order of writes: use write-back caching for all (non-fsync) updates, make sure updates propagate to disk in the correct order.
 % {\bf Update ordering problem:} doesn't work for bidirectional dependencies. Solution: some can be converted to single-dir, because some directions are more important than others, and clean-up must be done after system failures.
-{\bf Crash recovery:} Soft Updates requires none. Only inconsistencies are blocks marked as allocated but actually free, and can find theses blocks in background while using file system.
-
+{\bf Crash recovery:} Soft Updates requires none. Only inconsistencies are blocks marked as allocated but actually free, and can find theses blocks in background while using file system.\\
 {\bf Journaling File System} metadata changes first write to a journal, then write a commit record to the journal. Update real metadata and data after commit.
 {\bf ext3} Journal is just an ordinary (large) file, separates journaling from file system concerns. Uses physical redo journaling. Default journaling mode: metadata only. Journal space reclaimed by checkpointing.
 Journaling is handled by {\bf JBD} layer. JDB maintains single open transaction at a time, and new handles are added to current transaction. Records all blocks requested by transaction and periodically decides to commit. When commit, wait handlers to complete, and write to journal.
-Two modes for handling non-journaled data blocks: 1) {\bf Writeback:} data blocks are not ordered with respect to (journaled) metadata blocks. File can contain garbage (or worse!) after crash.
-2) {\bf Ordered:} data blocks must be flushed to disk before metadata blocks are committed to journal. Still challenging since blocks can change type (e.g. rmdir, reuse block for data, crash). Solution: synchronous delete, don't reuse metadata blocks until checkpointed out of journal, add ``revoke'' record in delete for freed directory block, scan ``revokes'' first, does not replay revoked blocks.
+Two modes for handling non-journaled data blocks: 1) {\bf Writeback:} data blocks are not ordered with respect to (journaled) metadata blocks. File corruption can occur if crash after the metadata is journaled but before the data block is written.
+2) {\bf Ordered:} data blocks must be flushed to disk before metadata blocks are committed to journal. Still challenging since blocks can change type (e.g. rmdir, reuse block for data, crash). Solution: synchronous delete, don't reuse metadata blocks until checkpointed out of journal, (ext3) add ``revoke'' record in delete for freed directory block, scan ``revokes'' first, does not replay revoked blocks. Also, don't reuse blocks until freeing transaction commits.
 
 % {\bf RAID} {\bf Parity} Use one disk to store parity data. XOR of all data blocks in stripe. Can recover any data block from all others + parity block. 
 % {\bf RAID 1} Redundancy via replication, two (or more) copies. Mirroring, shadowing, duplexing, etc. Write both, read either.
